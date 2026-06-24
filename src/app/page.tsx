@@ -1,201 +1,141 @@
 "use client";
 
 import styles from "./page.module.css";
-
-import {
-  useContract,
-  useAddress,
-  useDisconnect,
-  useContractWrite,
-  Web3Button,
-} from "@thirdweb-dev/react";
+import { useAddress, useDisconnect, ConnectWallet } from "@thirdweb-dev/react";
 import { useState } from "react";
 
-import { abi } from "./constant/abi";
-import { uploadFile } from "../utils/uploadFile";
-
-interface Document {
-  hash: string;
-  verified: boolean;
-  base64?: string;
-}
-
 export default function Home() {
-  const myContractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as string;
-
-  const { contract } = useContract(myContractAddress, abi);
-
-  const { mutateAsync, isLoading, error } = useContractWrite(
-    contract,
-    "uploadDocument"
-  );
-  const { mutateAsync: verifyDocument, isLoading: verfiyLoading } =
-    useContractWrite(contract, "verifyDocument");
-
-  const [file, setFile] = useState(null);
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [message, setMessage] = useState("Hello, Everyone");
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState("");
 
   const address = useAddress();
   const disconnect = useDisconnect();
 
-  const handleUploadClick = async () => {
-    if (file) {
-      try {
-        const uris = await uploadFile(file);
-
-        const ipfsHash = uris[0].replace(/^ipfs:\/\//, "").split("/")[0];
-        await mutateAsync({ args: [ipfsHash] });
-
-        // @ts-ignore
-        setDocuments((prev) => [...prev, { hash: ipfsHash, verified: false }]);
-        alert("Document uploaded and stored on blockchain successfully!");
-      } catch (error: any) {
-        if (error?.message) {
-          alert(
-            "MetaMask Error: The selected document with this IPFS hash has already been uploaded to the blockchain."
-          );
-        } else {
-          alert("An unknown error occurred during the upload.");
-        }
-      } finally {
-        //setUploading(false);
-      }
-    } else {
-      alert("Please select a file to upload");
+  const handleSubmit = () => {
+    if (inputValue.trim()) {
+      setMessage(inputValue.trim());
+      setInputValue("");
+      setIsEditing(false);
     }
   };
 
-  const handleFileChange = (event: any) => {
-    if (event.target.files.length > 0) {
-      setFile(event.target.files[0]);
-    }
-  };
-
-  const handleVerifyClick = async (hash: string) => {
-    try {
-      const result = await verifyDocument({ args: [hash] });
-
-      // @ts-ignore
-
-      const exists = result[0];
-
-      // @ts-ignore
-
-      const uploader = result[1];
-
-      // @ts-ignore
-
-      if (exists) {
-        setDocuments((prevDocs) =>
-          prevDocs.map((doc) =>
-            doc.hash === hash ? { ...doc, verified: true } : doc
-          )
-        );
-      } else {
-        alert("Document not found or not verified");
-      }
-    } catch (error) {
-      console.error("Error during verification:", error);
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") handleSubmit();
+    if (e.key === "Escape") {
+      setIsEditing(false);
+      setInputValue("");
     }
   };
 
   return (
-  <div className={styles.container}>
+    <div className={styles.page}>
       <header className={styles.header}>
-        <h1>Welcome to Document Verify</h1>
-        <div className={styles.headerActions}>
+        <div className={styles.logo}>
+          <span className={styles.logoIcon}>💬</span>
+          <span className={styles.logoText}>MessageBoard</span>
+        </div>
+
+        <div className={styles.walletSection}>
           {address ? (
-            <div className={styles.address}>
-              <p>{address}</p>
+            <div className={styles.connectedWallet}>
+              <span className={styles.walletDot} />
+              <span className={styles.walletAddress}>
+                {address.slice(0, 6)}...{address.slice(-4)}
+              </span>
               <button
-                className={styles.disconnectButton}
+                className={styles.disconnectBtn}
                 onClick={() => disconnect()}
               >
                 Disconnect
               </button>
             </div>
           ) : (
-            <Web3Button
+            <ConnectWallet
+              theme="dark"
+              btnTitle="Connect Wallet"
               style={{
-                backgroundColor: "#007bff",
-                color: "black",
-                padding: "8px 16px",
-                borderRadius: "5px",
+                background: "linear-gradient(135deg, #7c3aed, #2563eb)",
+                color: "#fff",
                 border: "none",
+                borderRadius: "50px",
+                padding: "10px 22px",
                 fontSize: "14px",
+                fontWeight: 600,
                 cursor: "pointer",
-                transition: "background-color 0.3s ease",
               }}
-              contractAddress={myContractAddress}
-              action={() => {}}
-            >
-              Connect Wallet
-            </Web3Button>
+            />
           )}
         </div>
       </header>
 
-      <div className={styles.uploadSection}>
-        <input type="file" onChange={handleFileChange} />
+      <main className={styles.main}>
+        <div className={styles.hero}>
+          <p className={styles.subtitle}>Decentralized Message Board</p>
+          <h1 className={styles.heroTitle}>Current Message</h1>
+        </div>
 
-        <Web3Button
-          style={{
-            backgroundColor: "#007bff",
-            color: "black",
-            padding: "8px 16px",
-            borderRadius: "5px",
-            border: "none",
-            fontSize: "14px",
-            cursor: "pointer",
-            transition: "background-color 0.3s ease",
-          }}
-          contractAddress={myContractAddress}
-          action={handleUploadClick}
-        >
-          {" "}
-          {isLoading ? "Uploading..." : "Upload"}
-        </Web3Button>
-      </div>
-      <div className={styles.divider}></div>
-
-      <div className={styles.documentList}>
-        <h2>Uploaded Documents</h2>
-        {documents.length === 0 && <p>No documents uploaded yet.</p>}
-        {documents.map((doc, index) => (
-          <div key={index} className={styles.documentItem}>
-            <img
-              src={`https://gateway.pinata.cloud/ipfs/${doc.hash}`}
-              alt="Document"
-              style={{ width: "150px", height: "150px" }}
-              onError={(e) => {
-                // Handle error if the document is not an image
-                e.currentTarget.src = "/default-preview.png";
-              }}
-            />
-            {doc.verified ? (
-              <span className={styles.verifiedBadge}>✔ Verified</span>
-            ) : (
-              <Web3Button
-                style={{
-                  backgroundColor: "#28a745",
-                  color: "black",
-                  padding: "8px 16px",
-                  borderRadius: "5px",
-                  border: "none",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  transition: "background-color 0.3s ease",
-                }}
-                contractAddress={myContractAddress}
-                action={() => handleVerifyClick(doc.hash)}
-              >
-              
-            verify
-              </Web3Button>
-            )}
+        <div className={styles.messageCard}>
+          <div className={styles.messageGlow} />
+          <div className={styles.messageContent}>
+            <span className={styles.quoteLeft}>&ldquo;</span>
+            <p className={styles.messageText} key={message}>
+              {message}
+            </p>
+            <span className={styles.quoteRight}>&rdquo;</span>
           </div>
-        ))}
-      </div>
+        </div>
+
+        <div className={styles.actionSection}>
+          {!isEditing ? (
+            <button
+              className={styles.changeBtn}
+              onClick={() => setIsEditing(true)}
+            >
+              <span>✏️</span>
+              Change Message
+            </button>
+          ) : (
+            <div className={styles.editPanel}>
+              <div className={styles.inputWrapper}>
+                <input
+                  type="text"
+                  className={styles.messageInput}
+                  placeholder="Type your new message..."
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  autoFocus
+                  maxLength={150}
+                />
+                <span className={styles.charCount}>{inputValue.length}/150</span>
+              </div>
+              <div className={styles.editActions}>
+                <button
+                  className={styles.cancelBtn}
+                  onClick={() => {
+                    setIsEditing(false);
+                    setInputValue("");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={styles.submitBtn}
+                  onClick={handleSubmit}
+                  disabled={!inputValue.trim()}
+                >
+                  Submit Message
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
+
+      <footer className={styles.footer}>
+        <p>Built on Web3 &bull; Powered by Thirdweb</p>
+      </footer>
     </div>
   );
 }
