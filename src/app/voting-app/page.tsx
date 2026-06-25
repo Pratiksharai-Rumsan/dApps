@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styles from "./page.module.css";
-import { useAddress, useDisconnect, ConnectWallet, Web3Button } from "@thirdweb-dev/react";
+import { ethers } from "ethers";
+import votingAbi from "../../../artifacts-export/Voting.abi.json"
+import deploymentInfo from "../../../artifacts-export/deployment.voting-app.json"
 
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as string;
+const CONTRACT_ADDRESS = deploymentInfo.contractAddress;
 
-const VOTING_ABI = [
-  {
-    inputs: [{ internalType: "uint256", name: "candidateId", type: "uint256" }],
-    name: "vote",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-];
+const VOTING_ABI = votingAbi as any;
 
 interface Candidate {
   id: number;
@@ -28,29 +22,29 @@ interface Candidate {
 
 const CANDIDATES: Candidate[] = [
   {
-    id: 0,
+    id: 1,
     name: "Alice Johnson",
     role: "Technology & Innovation",
     description: "Advocating for a decentralized digital future powered by open-source tools and AI governance.",
-    votes: 1247,
+    votes: 0,
     color: "#6366f1",
     initials: "AJ",
   },
   {
-    id: 1,
+    id: 2,
     name: "Bob Martinez",
     role: "Environmental Policy",
     description: "Committed to building a greener planet through sustainable blockchain infrastructure.",
-    votes: 983,
+    votes: 0,
     color: "#10b981",
     initials: "BM",
   },
   {
-    id: 2,
+    id: 3,
     name: "Carol Chen",
     role: "Economic Reform",
     description: "Driving financial inclusion and full transparency through DeFi-first solutions.",
-    votes: 1105,
+    votes: 0,
     color: "#f59e0b",
     initials: "CC",
   },
@@ -61,13 +55,46 @@ const TX_STEPS = ["Click Vote", "Wallet Popup", "Sign Transaction", "Broadcastin
 type TxStatus = "idle" | "signing" | "processing" | "confirmed" | "error";
 
 export default function VotingApp() {
-  const address = useAddress();
-  const disconnect = useDisconnect();
+  const [address, setAddress] = useState<string | null>(null);
+
+  const connectWallet = async () => {
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      try {
+        const accounts = await (window as any).ethereum.request({ method: "eth_requestAccounts" });
+        setAddress(accounts[0]);
+      } catch (err) {
+        console.error("Wallet connection failed", err);
+      }
+    } else {
+      alert("MetaMask not detected");
+    }
+  };
+
+  const disconnect = () => setAddress(null);
 
   const [txStatus, setTxStatus] = useState<TxStatus>("idle");
   const [votedFor, setVotedFor] = useState<number | null>(null);
   const [voteCounts, setVoteCounts] = useState(CANDIDATES.map((c) => c.votes));
   const [activeVoteId, setActiveVoteId] = useState<number | null>(null);
+
+  // Fetch vote counts from blockchain for each candidate
+  const fetchVoteCounts = async () => {
+    if (!address) return;
+    try {
+      const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+      const contract = new ethers.Contract(CONTRACT_ADDRESS, VOTING_ABI, provider);
+      const counts = await Promise.all(CANDIDATES.map((c) => contract.votes(c.id)));
+      setVoteCounts(counts.map((c: any) => Number(c)));
+    } catch (err) {
+      console.error("Failed to fetch vote counts", err);
+    }
+  };
+
+  useEffect(() => {
+    if (address) {
+      fetchVoteCounts();
+    }
+  }, [address]);
 
   const totalVotes = voteCounts.reduce((a, b) => a + b, 0);
   const maxVotes = Math.max(...voteCounts);
@@ -75,9 +102,9 @@ export default function VotingApp() {
   // Steps 0 & 1 are shown as "already done" once action fires (wallet already connected/popup opened)
   const activeStep =
     txStatus === "signing" ? 2
-    : txStatus === "processing" ? 3
-    : txStatus === "confirmed" ? TX_STEPS.length  // all done
-    : -1;
+      : txStatus === "processing" ? 3
+        : txStatus === "confirmed" ? TX_STEPS.length  // all done
+          : -1;
 
   const getStepState = (i: number): "done" | "active" | "waiting" => {
     if (i < activeStep) return "done";
@@ -85,17 +112,15 @@ export default function VotingApp() {
     return "waiting";
   };
 
-  const handleSuccess = (candidateId: number) => {
-    setTxStatus("processing");
+  const handleSuccess = async (candidateId: number) => {
+    // Refresh vote counts from chain after a successful vote
+    await fetchVoteCounts();
+    setVotedFor(candidateId);
+    setTxStatus("confirmed");
     setTimeout(() => {
-      setVotedFor(candidateId);
-      setVoteCounts((prev) => prev.map((v, i) => (i === candidateId ? v + 1 : v)));
-      setTxStatus("confirmed");
-      setTimeout(() => {
-        setTxStatus("idle");
-        setActiveVoteId(null);
-      }, 5000);
-    }, 1200);
+      setTxStatus("idle");
+      setActiveVoteId(null);
+    }, 5000);
   };
 
   const handleError = () => {
@@ -121,24 +146,22 @@ export default function VotingApp() {
               <span className={styles.walletAddress}>
                 {address.slice(0, 6)}...{address.slice(-4)}
               </span>
-              <button className={styles.disconnectBtn} onClick={() => disconnect()}>
+              <button className={styles.disconnectBtn} onClick={disconnect}>
                 Disconnect
               </button>
             </div>
           ) : (
-            <ConnectWallet
-              theme="dark"
-              btnTitle="Connect Wallet"
-              style={{
-                background: "linear-gradient(135deg, #6366f1, #4f46e5)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                padding: "10px 20px",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
-            />
+            <button className={styles.connectBtn} onClick={connectWallet} style={{
+              background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "8px",
+              padding: "10px 20px",
+              fontSize: "14px",
+              fontWeight: 600,
+            }}>
+              Connect Wallet
+            </button>
           )}
         </div>
       </header>
@@ -234,36 +257,43 @@ export default function VotingApp() {
                     <button className={styles.disabledBtn} disabled>
                       {hasVoted ? "✔ Voted" : "Voting Closed"}
                     </button>
-                  ) : (
-                    <Web3Button
-                      contractAddress={CONTRACT_ADDRESS}
-                      contractAbi={VOTING_ABI}
-                      action={async (contract) => {
+                  ) : <button
+                    disabled={isThisVoting}
+                    onClick={async () => {
+                      try {
                         setActiveVoteId(candidate.id);
                         setTxStatus("signing");
-                        await contract.call("vote", [candidate.id]);
-                      }}
-                      onSuccess={() => handleSuccess(candidate.id)}
-                      onError={handleError}
-                      style={{
-                        width: "100%",
-                        background: isThisVoting
-                          ? `${candidate.color}33`
-                          : `linear-gradient(135deg, ${candidate.color}, ${candidate.color}bb)`,
-                        color: "#fff",
-                        border: "none",
-                        borderRadius: "10px",
-                        padding: "13px 24px",
-                        fontSize: "15px",
-                        fontWeight: 700,
-                        cursor: isThisVoting ? "wait" : "pointer",
-                        boxShadow: `0 4px 20px ${candidate.color}35`,
-                        transition: "all 0.3s ease",
-                      }}
-                    >
-                      {isThisVoting ? "Processing..." : "Cast Vote →"}
-                    </Web3Button>
-                  )}
+                        const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+                        const signer = provider.getSigner();
+                        const contract = new ethers.Contract(CONTRACT_ADDRESS, VOTING_ABI, signer);
+                        const tx = await contract.vote(candidate.id);
+                        console.log('Vote transaction sent:', tx.hash);
+                        await tx.wait();
+                        handleSuccess(candidate.id);
+                      } catch (err) {
+                        console.error(err);
+                        handleError();
+                      }
+                    }}
+                    style={{
+                      width: "100%",
+                      background: isThisVoting
+                        ? `${candidate.color}33`
+                        : `linear-gradient(135deg, ${candidate.color}, ${candidate.color}bb)`,
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "13px 24px",
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      cursor: isThisVoting ? "wait" : "pointer",
+                      boxShadow: `0 4px 20px ${candidate.color}35`,
+                      transition: "all 0.3s ease",
+                    }}
+                  >
+                    {isThisVoting ? "Processing..." : "Cast Vote →"}
+                  </button>
+                  }
                 </div>
               </div>
             );
@@ -273,16 +303,15 @@ export default function VotingApp() {
         {/* ── Transaction Flow ── */}
         {txStatus !== "idle" && (
           <div
-            className={`${styles.txFlow} ${
-              txStatus === "confirmed" ? styles.txConfirmed : ""
-            } ${txStatus === "error" ? styles.txError : ""}`}
+            className={`${styles.txFlow} ${txStatus === "confirmed" ? styles.txConfirmed : ""
+              } ${txStatus === "error" ? styles.txError : ""}`}
           >
             <p className={styles.txTitle}>
               {txStatus === "error"
                 ? "❌ Transaction Failed — Please try again"
                 : txStatus === "confirmed"
-                ? "🎉 Vote Confirmed on Blockchain!"
-                : "🔄 Transaction in Progress..."}
+                  ? "🎉 Vote Confirmed on Blockchain!"
+                  : "🔄 Transaction in Progress..."}
             </p>
             <div className={styles.steps}>
               {TX_STEPS.map((step, i) => {
@@ -291,33 +320,30 @@ export default function VotingApp() {
                   <React.Fragment key={step}>
                     <div className={styles.stepItem}>
                       <div
-                        className={`${styles.stepCircle} ${
-                          state === "done"
-                            ? styles.stepDone
-                            : state === "active"
+                        className={`${styles.stepCircle} ${state === "done"
+                          ? styles.stepDone
+                          : state === "active"
                             ? styles.stepActive
                             : styles.stepWaiting
-                        }`}
+                          }`}
                       >
                         {state === "done" ? "✓" : i + 1}
                       </div>
                       <span
-                        className={`${styles.stepLabel} ${
-                          state === "active"
-                            ? styles.stepLabelActive
-                            : state === "done"
+                        className={`${styles.stepLabel} ${state === "active"
+                          ? styles.stepLabelActive
+                          : state === "done"
                             ? styles.stepLabelDone
                             : ""
-                        }`}
+                          }`}
                       >
                         {step}
                       </span>
                     </div>
                     {i < TX_STEPS.length - 1 && (
                       <div
-                        className={`${styles.connector} ${
-                          state === "done" ? styles.connectorDone : ""
-                        }`}
+                        className={`${styles.connector} ${state === "done" ? styles.connectorDone : ""
+                          }`}
                       />
                     )}
                   </React.Fragment>
@@ -329,7 +355,7 @@ export default function VotingApp() {
       </main>
 
       <footer className={styles.footer}>
-        <p>Powered by Thirdweb &bull; On-chain governance</p>
+        <p>Powered by ethers.js &bull; On-chain governance</p>
       </footer>
     </div>
   );

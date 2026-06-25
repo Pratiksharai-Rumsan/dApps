@@ -8,6 +8,7 @@
     "clean": "hardhat clean",
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "deployVoting": "hardhat run scripts/deployVoting.ts --network baseSepolia",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"
