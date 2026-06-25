@@ -33,7 +33,10 @@ async function main() {
 
   // ── Export ABI + address ──────────────────────────────────────────────
   // Verify initial greeting using explicit getter
-  const greetingContract = new ethers.Contract(address, artifact.abi, ethers.provider);
+  // Use the deployer signer (connected to baseSepolia) as provider
+  const greetingContract = new ethers.Contract(address, Greeting.interface, deployer);
+  // Wait a moment for the network to index the deployment (helps on testnets)
+  await new Promise(r => setTimeout(r, 3000));
   const initialGreeting = await greetingContract.greeting(); // "Hello Blockchain"
   console.log(`📝 Initial greeting   : "${initialGreeting}"\n`);
 
