@@ -2,7 +2,9 @@
 
 import styles from "./page.module.css";
 import { ethers } from "ethers";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import greetingAbi from "../../artifacts-export/Greeting.abi.json";
+import deploymentInfo from "../../artifacts-export/deployment.baseSepolia.json";
 
 export default function Home() {
   const [message, setMessage] = useState("Hello, Everyone");
@@ -10,30 +12,75 @@ export default function Home() {
   const [inputValue, setInputValue] = useState("");
 
   const [address, setAddress] = useState<string | null>(null);
+  const [greetingContract, setGreetingContract] = useState<ethers.Contract | null>(null);
 
   const connectWallet = async () => {
     if (typeof window !== "undefined" && (window as any).ethereum) {
       try {
         const provider = new ethers.providers.Web3Provider((window as any).ethereum);
         await provider.send("eth_requestAccounts", []);
+        // Network sanity checks
+        const network = await provider.getNetwork();
+        console.log('🔗 Connected to network:', network.name, `(chainId ${network.chainId})`);
+        const bytecode = await provider.getCode(deploymentInfo.contractAddress);
+        if (bytecode === '0x') {
+          console.error('⚠️ No contract bytecode at the supplied address. Check deploymentInfo!');
+        }
         const signer = provider.getSigner();
+
         const walletAddress = await signer.getAddress();
         setAddress(walletAddress);
+        console.log("🦊 Connected wallet:", walletAddress);
+
+        // Verify you are using the right address from the JSON
+        console.log("📦 Contract address from deploymentInfo:", deploymentInfo.contractAddress);
+
+        const contractWithSigner = new ethers.Contract(
+          deploymentInfo.contractAddress,
+          greetingAbi,
+          signer
+        );
+
+        setGreetingContract(contractWithSigner);
+
+        // Fetch the current greeting – log the result or any error
+        contractWithSigner
+          .greeting()
+          .then((greeting: string) => {
+            console.log("🔔 Greeting from contract:", greeting);
+            setMessage(greeting);
+          })
+          .catch((err: any) => {
+            console.error("❌ Failed to read greeting:", err);
+          });
       } catch (err) {
-        console.error("Wallet connection failed", err);
+        console.error("⚠️ Wallet connection failed:", err);
       }
     } else {
-      console.error("MetaMask not detected");
+      console.error("⚠️ MetaMask not detected");
     }
   };
+
 
   const disconnect = () => {
     setAddress(null);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (inputValue.trim()) {
-      setMessage(inputValue.trim());
+      if (greetingContract) {
+        try {
+          const tx = await greetingContract.setGreeting(inputValue.trim());
+          await tx.wait();
+          const newGreeting = await greetingContract.greeting();
+          setMessage(newGreeting);
+        } catch (err) {
+          console.error("Failed to set greeting", err);
+        }
+      } else {
+        // Fallback if contract not ready
+        setMessage(inputValue.trim());
+      }
       setInputValue("");
       setIsEditing(false);
     }
