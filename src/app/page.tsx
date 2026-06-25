@@ -1,7 +1,7 @@
 "use client";
 
 import styles from "./page.module.css";
-import { useAddress, useDisconnect, ConnectWallet } from "@thirdweb-dev/react";
+import { ethers } from "ethers";
 import { useState } from "react";
 
 export default function Home() {
@@ -9,8 +9,27 @@ export default function Home() {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
 
-  const address = useAddress();
-  const disconnect = useDisconnect();
+  const [address, setAddress] = useState<string | null>(null);
+
+  const connectWallet = async () => {
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      try {
+        const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const walletAddress = await signer.getAddress();
+        setAddress(walletAddress);
+      } catch (err) {
+        console.error("Wallet connection failed", err);
+      }
+    } else {
+      console.error("MetaMask not detected");
+    }
+  };
+
+  const disconnect = () => {
+    setAddress(null);
+  };
 
   const handleSubmit = () => {
     if (inputValue.trim()) {
@@ -43,28 +62,23 @@ export default function Home() {
               <span className={styles.walletAddress}>
                 {address.slice(0, 6)}...{address.slice(-4)}
               </span>
-              <button
-                className={styles.disconnectBtn}
-                onClick={() => disconnect()}
-              >
+              <button className={styles.disconnectBtn} onClick={disconnect}>
                 Disconnect
               </button>
             </div>
           ) : (
-            <ConnectWallet
-              theme="dark"
-              btnTitle="Connect Wallet"
-              style={{
-                background: "linear-gradient(135deg, #7c3aed, #2563eb)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "50px",
-                padding: "10px 22px",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            />
+            <button className={styles.connectBtn} onClick={connectWallet} style={{
+              backgroundColor: "#007bff",
+              color: "black",
+              padding: "8px 16px",
+              borderRadius: "5px",
+              border: "none",
+              fontSize: "14px",
+              cursor: "pointer",
+              transition: "background-color 0.3s ease",
+            }}>
+              Connect wallet
+            </button>
           )}
         </div>
       </header>

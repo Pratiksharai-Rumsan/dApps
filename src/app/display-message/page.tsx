@@ -1,16 +1,50 @@
 "use client";
 
 import styles from "../page.module.css";
-import { useAddress, useDisconnect, ConnectWallet } from "@thirdweb-dev/react";
-import { useState } from "react";
+import { ethers } from "ethers";
+import { useState, useEffect } from "react";
 
 export default function Home() {
   const [message, setMessage] = useState("Hello, Everyone");
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [address, setAddress] = useState<string | null>(null);
 
-  const address = useAddress();
-  const disconnect = useDisconnect();
+  const connectWallet = async () => {
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      try {
+        const provider = new ethers.providers.Web3Provider((window as any).ethereum);
+        await provider.send("eth_requestAccounts", []);
+        const signer = provider.getSigner();
+        const walletAddress = await signer.getAddress();
+        setAddress(walletAddress);
+      } catch (err) {
+        console.error("Wallet connection failed", err);
+      }
+    } else {
+      console.error("MetaMask not detected");
+    }
+  };
+
+  const disconnect = () => {
+    setAddress(null);
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      const handleAccountsChanged = (accounts: string[]) => {
+        if (accounts.length === 0) {
+          setAddress(null);
+        } else {
+          setAddress(accounts[0]);
+        }
+      };
+      (window as any).ethereum.on("accountsChanged", handleAccountsChanged);
+      return () => {
+        (window as any).ethereum.removeListener("accountsChanged", handleAccountsChanged);
+      };
+    }
+  }, []);
 
   const handleSubmit = () => {
     if (inputValue.trim()) {
@@ -43,28 +77,14 @@ export default function Home() {
               <span className={styles.walletAddress}>
                 {address.slice(0, 6)}...{address.slice(-4)}
               </span>
-              <button
-                className={styles.disconnectBtn}
-                onClick={() => disconnect()}
-              >
+              <button className={styles.disconnectBtn} onClick={disconnect}>
                 Disconnect
               </button>
             </div>
           ) : (
-            <ConnectWallet
-              theme="dark"
-              btnTitle="Connect Wallet"
-              style={{
-                background: "linear-gradient(135deg, #7c3aed, #2563eb)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "50px",
-                padding: "10px 22px",
-                fontSize: "14px",
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            />
+            <button className={styles.connectBtn} onClick={connectWallet}>
+              Connect  your wallet
+            </button>
           )}
         </div>
       </header>
@@ -78,20 +98,17 @@ export default function Home() {
         <div className={styles.messageCard}>
           <div className={styles.messageGlow} />
           <div className={styles.messageContent}>
-            <span className={styles.quoteLeft}>&ldquo;</span>
+            <span className={styles.quoteLeft}>“</span>
             <p className={styles.messageText} key={message}>
               {message}
             </p>
-            <span className={styles.quoteRight}>&rdquo;</span>
+            <span className={styles.quoteRight}>”</span>
           </div>
         </div>
 
         <div className={styles.actionSection}>
           {!isEditing ? (
-            <button
-              className={styles.changeBtn}
-              onClick={() => setIsEditing(true)}
-            >
+            <button className={styles.changeBtn} onClick={() => setIsEditing(true)}>
               <span>✏️</span>
               Change Message
             </button>
@@ -134,7 +151,7 @@ export default function Home() {
       </main>
 
       <footer className={styles.footer}>
-        <p>Built on Web3 &bull; Powered by Thirdweb</p>
+        <p>Built on Web3 • Powered by Ethers.js</p>
       </footer>
     </div>
   );
