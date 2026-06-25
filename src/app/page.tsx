@@ -104,6 +104,7 @@ export default function Home() {
     setAddress(null);
     window.localStorage.removeItem("connectedAddress");
     setGreetingContract(null);
+    setMessage("Hello, Everyone");
   };
 
   const handleSubmit = async () => {
@@ -158,22 +159,22 @@ export default function Home() {
             </div>
           ) : (
             <button
-            className={styles.connectBtn}
-            onClick={connectWallet}
-            disabled={isConnecting}
-            style={{
-              backgroundColor: isConnecting ? "#555" : "#007bff",
-              color: "black",
-              padding: "8px 16px",
-              borderRadius: "5px",
-              border: "none",
-              fontSize: "14px",
-              cursor: isConnecting ? "default" : "pointer",
-              transition: "background-color 0.3s ease",
-            }}
-          >
-            {isConnecting ? "Connecting..." : "Connect wallet"}
-          </button>
+              className={styles.connectBtn}
+              onClick={connectWallet}
+              disabled={isConnecting}
+              style={{
+                backgroundColor: isConnecting ? "#555" : "#007bff",
+                color: "black",
+                padding: "8px 16px",
+                borderRadius: "5px",
+                border: "none",
+                fontSize: "14px",
+                cursor: isConnecting ? "default" : "pointer",
+                transition: "background-color 0.3s ease",
+              }}
+            >
+              {isConnecting ? "Connecting..." : "Connect wallet"}
+            </button>
           )}
         </div>
       </header>
