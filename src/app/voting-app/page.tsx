@@ -69,6 +69,19 @@ export default function VotingApp() {
       alert("MetaMask not detected");
     }
   };
+  useEffect(() => {
+    if (typeof window !== "undefined" && (window as any).ethereum) {
+      (window as any).ethereum
+        .request({ method: "eth_accounts" })
+        .then((accounts: string[]) => {
+          if (accounts.length) setAddress(accounts[0]);
+        })
+        .catch((err: any) => console.error("Error checking accounts", err));
+      (window as any).ethereum.on("accountsChanged", (accounts: string[]) => {
+        if (accounts.length) setAddress(accounts[0]); else setAddress(null);
+      });
+    }
+  }, []);
 
   const disconnect = () => setAddress(null);
 
