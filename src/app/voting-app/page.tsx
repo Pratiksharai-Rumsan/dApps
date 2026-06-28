@@ -280,7 +280,6 @@ export default function VotingApp() {
                         const signer = provider.getSigner();
                         const contract = new ethers.Contract(CONTRACT_ADDRESS, VOTING_ABI, signer);
                         const tx = await contract.vote(candidate.id);
-                        console.log('Vote transaction sent:', tx.hash);
                         await tx.wait();
                         handleSuccess(candidate.id);
                       } catch (err) {

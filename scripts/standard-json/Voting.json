@@ -1,0 +1,29 @@
+{
+  "language": "Solidity",
+  "sources": {
+    "contracts/Voting.sol": {
+      "content": "// SPDX-License-Identifier: MIT\npragma solidity ^0.8.20;\n\ncontract Voting {\n    mapping(uint256 => uint256) public votes;\n    mapping(address => bool) public hasVoted;\n\n    uint256 public totalVotes;\n\n    event Voted(\n        address indexed voter,\n        uint256 indexed candidateId\n    );\n\n    function vote(uint256 candidateId) external {\n        require(!hasVoted[msg.sender], \"Already voted\");\n\n        require(\n            candidateId >= 1 && candidateId <= 3,\n            \"Invalid candidate\"\n        );\n\n        hasVoted[msg.sender] = true;\n\n        votes[candidateId]++;\n        totalVotes++;\n\n        emit Voted(msg.sender, candidateId);\n    }\n}"
+    }
+  },
+  "settings": {
+    "evmVersion": "paris",
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "outputSelection": {
+      "*": {
+        "*": [
+          "abi",
+          "evm.bytecode",
+          "evm.deployedBytecode",
+          "evm.methodIdentifiers",
+          "metadata"
+        ],
+        "": [
+          "ast"
+        ]
+      }
+    }
+  }
+}
