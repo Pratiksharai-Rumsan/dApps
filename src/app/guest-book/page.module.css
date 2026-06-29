@@ -1,0 +1,195 @@
+/* src/app/guest-book/page.module.css */
+
+.page {
+  min-height: 100vh;
+  background: var(--bg);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--glass-blur));
+  box-shadow: var(--shadow);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.logoIcon {
+  font-size: 1.8rem;
+  transform: rotate(-10deg);
+}
+
+.logoText {
+  font-size: 1.6rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.walletSection {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.connectedWallet {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--glass-blur));
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.walletDot {
+  width: 10px;
+  height: 10px;
+  background: #2ecc71;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+
+  70% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+}
+
+.walletAddress {
+  font-family: monospace;
+  font-size: 0.9rem;
+}
+
+.disconnectBtn,
+.connectBtn {
+  cursor: pointer;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.4rem 0.9rem;
+  transition: var(--transition);
+}
+
+.disconnectBtn {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.disconnectBtn:hover {
+  background: #c0392b;
+}
+
+.connectBtn {
+  background: var(--primary);
+  color: #fff;
+}
+
+.connectBtn:hover {
+  background: var(--primary-dark);
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+.hero {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.messageInput {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius);
+  border: none;
+  background: var(--bg-glass);
+  color: #fff;
+  font-size: 1rem;
+  resize: none;
+  transition: var(--transition);
+}
+
+.messageInput:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.grid {
+  width: 100%;
+  max-width: 800px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--glass-blur));
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  position: relative;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+}
+
+.messageText {
+  font-size: 1rem;
+  line-height: 1.4;
+  color: #e0e0e0;
+  margin-bottom: 0.6rem;
+}
+
+.candidateRole {
+  font-size: 0.85rem;
+  color: #aaa;
+  text-align: right;
+}
+
+.footer {
+  text-align: center;
+  padding: 1rem;
+  font-size: 0.9rem;
+  background: var(--bg-glass);
+  backdrop-filter: blur(var(--glass-blur));
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
