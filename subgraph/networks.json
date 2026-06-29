@@ -2,7 +2,7 @@
   "base-sepolia": {
     "GuestBook": {
       "address": "0x168082De64B1aB47a19023CC55F710dA11C27158",
-      "startBlock": 84532
+      "startBlock": 43462739
     }
   }
 }
