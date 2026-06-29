@@ -4,11 +4,7 @@ import { ethers } from "ethers";
 
 import localFont from "next/font/local";
 import "./globals.css";
-import {
-  ChainId,
-  ThirdwebProvider,
-  ThirdwebSDKProvider,
-} from "@thirdweb-dev/react";
+import Providers from "./Providers";
 import { access } from "fs";
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -26,13 +22,13 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const clientId = process.env.NEXT_PUBLIC_THIRD_WEB_CLIENT_ID;
+
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <ThirdwebProvider clientId={clientId} activeChain={"sepolia"}>
-          {children}
-        </ThirdwebProvider>
+
+        <Providers>{children}</Providers>
+
       </body>
     </html>
   );
