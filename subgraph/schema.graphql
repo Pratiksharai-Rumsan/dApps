@@ -1,0 +1,8 @@
+type MessagePosted @entity(immutable: true) {
+  id: Bytes!
+  author: Bytes! # address
+  message: String! # string
+  blockNumber: BigInt!
+  blockTimestamp: BigInt!
+  transactionHash: Bytes!
+}

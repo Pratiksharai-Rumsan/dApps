@@ -9,6 +9,7 @@
     "test": "hardhat test",
     "deploy": "hardhat run scripts/deploy.ts --network baseSepolia",
     "deployVoting": "hardhat run scripts/deployVoting.ts --network baseSepolia",
+    "deployGuestBook": "hardhat run scripts/deployGuestBook.ts --network baseSepolia",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

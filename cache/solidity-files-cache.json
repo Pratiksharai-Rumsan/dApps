@@ -72,6 +72,42 @@
       "artifacts": [
         "Voting"
       ]
+    },
+    "/Users/rumsanoffice/Desktop/learning-projects/dApps/contracts/GuestBook.sol": {
+      "lastModificationDate": 1782693277477,
+      "contentHash": "2f48011227ca7e590c9d02dd42dc8b63",
+      "sourceName": "contracts/GuestBook.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "GuestBook"
+      ]
     }
   }
 }
